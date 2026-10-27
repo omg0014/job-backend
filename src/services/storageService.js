@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { env } from '../config/env.js';
 import { ApiError } from '../utils/ApiError.js';
+import { findFile, openReadStream, readFile, removeFile, writeFile } from '../storage/gridfs.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const backendRoot = path.resolve(__dirname, '../..');
@@ -77,6 +78,43 @@ const localDriver = {
   },
 };
 
-const drivers = { local: localDriver };
+/**
+ * CVs inside MongoDB GridFS, under the same "cvs/<file>" keys the disk driver
+ * uses as paths. Selected by STORAGE_DRIVER=gridfs, alongside the gridfs
+ * video driver, so one setting moves every upload off the instance's disk.
+ */
+const gridfsDriver = {
+  name: 'gridfs',
+
+  async save(buffer, { originalName, subdir = 'cvs' }) {
+    const ext = path.extname(originalName || '').toLowerCase();
+    const fileName = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
+    // Forward slashes always: this is a key, not an OS path.
+    const storagePath = `${subdir}/${fileName}`;
+    await writeFile(storagePath, buffer, { originalName });
+    return { fileName, storagePath };
+  },
+
+  async read(storagePath) {
+    if (!(await findFile(storagePath))) {
+      throw ApiError.notFound('File is no longer available on the server');
+    }
+    return readFile(storagePath);
+  },
+
+  async exists(storagePath) {
+    return Boolean(await findFile(storagePath));
+  },
+
+  createReadStream(storagePath) {
+    return openReadStream(storagePath);
+  },
+
+  async remove(storagePath) {
+    await removeFile(storagePath);
+  },
+};
+
+const drivers = { local: localDriver, gridfs: gridfsDriver };
 
 export const storageService = drivers[env.storageDriver] ?? localDriver;

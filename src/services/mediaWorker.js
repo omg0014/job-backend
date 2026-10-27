@@ -52,6 +52,13 @@ const handleTranscode = async (job) => {
     return;
   }
 
+  // ffmpeg needs a real file path, which only the disk driver has. Under
+  // gridfs/r2 the clip is kept as recorded — browsers that recorded it play it.
+  if (typeof storage.absolutePathFor !== 'function') {
+    await markTranscoded(job.refId, questionOrder, key);
+    return;
+  }
+
   const source = storage.absolutePathFor(key);
   const target = source.replace(/\.[^.]+$/, '.mp4');
   await runFfmpeg(source, target);

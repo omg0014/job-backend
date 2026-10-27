@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { storage, isLocalStorage } from '../storage/index.js';
+import { storage, servesOwnMedia } from '../storage/index.js';
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -21,7 +21,7 @@ import { storage, isLocalStorage } from '../storage/index.js';
 export const mediaRoutes = () => {
   const router = Router();
 
-  if (!isLocalStorage) return router;
+  if (!servesOwnMedia) return router;
 
   router.get('/:token', async (req, res) => {
     const verified = storage.verifyToken(req.params.token);
@@ -54,7 +54,10 @@ export const mediaRoutes = () => {
 
     if (!range) {
       res.setHeader('Content-Length', total);
-      return storage.createReadStream(verified.key).pipe(res);
+      return storage
+        .createReadStream(verified.key)
+        .on('error', () => res.destroy())
+        .pipe(res);
     }
 
     const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
@@ -88,7 +91,11 @@ export const mediaRoutes = () => {
     res.status(206);
     res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
     res.setHeader('Content-Length', end - start + 1);
-    return storage.createReadStream(verified.key, { start, end }).pipe(res);
+    return storage
+      .createReadStream(verified.key, { start, end })
+      // A file deleted between stat and read must not leave the request hanging.
+      .on('error', () => res.destroy())
+      .pipe(res);
   });
 
   return router;

@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Yugam International School job portal — API server",
+  "description": "Yugam International School job portal \u2014 API server",
   "main": "src/server.js",
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "seed": "node src/seed/seed.js",
-    "seed:admin": "node src/seed/seedAdmin.js"
+    "seed:admin": "node src/seed/seedAdmin.js",
+    "migrate:uploads": "node src/scripts/migrateUploadsToGridfs.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
