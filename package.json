@@ -1,0 +1,33 @@
+{
+  "name": "yugam-job-portal-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Yugam International School job portal — API server",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "seed": "node src/seed/seed.js",
+    "seed:admin": "node src/seed/seedAdmin.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mammoth": "^1.8.0",
+    "mongoose": "^8.6.0",
+    "morgan": "^1.10.0",
+    "multer": "^2.3.0",
+    "nodemailer": "^9.1.1",
+    "pdf-parse": "^1.1.1",
+    "zod": "^3.23.8"
+  },
+  "overrides": {
+    "qs": "^6.16.0"
+  }
+}

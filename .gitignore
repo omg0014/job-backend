@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+# Uploaded CVs and screening videos are candidates' personal data — never commit them.
+uploads/**
+!uploads/.gitkeep
+!uploads/cvs/.gitkeep
