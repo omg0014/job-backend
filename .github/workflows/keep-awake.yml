@@ -1,0 +1,41 @@
+# Keeps the Render free-plan instance from spinning down.
+#
+# Render sleeps a free web service after 15 minutes without traffic, and the
+# next visitor then waits ~50 seconds for a cold start. Pinging every 10
+# minutes keeps it warm. GitHub may delay scheduled runs by a few minutes
+# under load, so 10 (not 14) leaves headroom inside the 15-minute window.
+#
+# The API is POST-only, so the health check is a POST.
+name: Keep backend awake
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  # Lets you run it by hand from the Actions tab.
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: keep-awake
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HEALTH_URL: https://job-backend-cxah.onrender.com/api/health
+    steps:
+      - name: Ping health endpoint
+        run: |
+          # A cold start can take close to a minute, so allow 90s per attempt
+          # and retry a few times before calling it a failure.
+          for attempt in 1 2 3; do
+            status=$(curl -s -o /dev/null -w '%{http_code}' -X POST --max-time 90 "$HEALTH_URL" || true)
+            echo "Attempt $attempt: HTTP $status"
+            if [ "$status" = "200" ]; then exit 0; fi
+            sleep 10
+          done
+          echo "::error::Backend did not respond with 200 after 3 attempts"
+          exit 1
